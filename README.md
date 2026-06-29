@@ -128,7 +128,3 @@ uvicorn main:app --reload --port 8000
 See [`infra/terraform/README.md`](infra/terraform/README.md) for GCP provisioning steps and [`infra/k8s/argocd/install-notes.md`](infra/k8s/argocd/install-notes.md) for ArgoCD setup.
 
 ---
-
-## License
-
-MIT
