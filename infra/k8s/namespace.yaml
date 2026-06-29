@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: combat-sports
+  labels:
+    name: combat-sports
+    app.kubernetes.io/managed-by: argocd

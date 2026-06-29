@@ -1,0 +1,13 @@
+apiVersion: v2
+name: combat-sports-ai-service
+description: Helm chart for the Combat Sports Intelligence FastAPI AI microservice
+type: application
+version: 0.1.0
+appVersion: "0.0.1"
+keywords:
+  - combat-sports
+  - fastapi
+  - ai
+  - llm
+maintainers:
+  - name: Combat Sports Platform Team

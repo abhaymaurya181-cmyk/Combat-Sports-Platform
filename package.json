@@ -1,0 +1,31 @@
+{
+  "name": "combat-sports-intelligence",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@9.1.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "turbo run type-check",
+    "db:generate": "pnpm --filter @combat-sports/db prisma generate",
+    "db:migrate": "pnpm --filter @combat-sports/db prisma migrate dev",
+    "db:studio": "pnpm --filter @combat-sports/db prisma studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.6",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

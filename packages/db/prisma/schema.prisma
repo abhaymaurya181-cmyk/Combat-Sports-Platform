@@ -1,0 +1,197 @@
+// Combat Sports Intelligence Platform — Prisma Schema
+// DB: PostgreSQL 16 + pgvector extension
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Organization {
+  UFC
+  PFL
+  ONE
+  Bellator
+  RIZIN
+  KSW
+  BKFC
+  LFA
+  CageWarriors
+  Other
+}
+
+enum WeightClass {
+  Strawweight
+  Flyweight
+  Bantamweight
+  Featherweight
+  Lightweight
+  Welterweight
+  Middleweight
+  LightHeavyweight
+  Heavyweight
+  SuperHeavyweight
+}
+
+enum Stance {
+  Orthodox
+  Southpaw
+  Switch
+}
+
+enum FightResult {
+  Win
+  Loss
+  Draw
+  NoContest
+}
+
+enum FinishMethod {
+  KO
+  TKO
+  Submission
+  Decision_Unanimous
+  Decision_Split
+  Decision_Majority
+  DQ
+  NC
+}
+
+enum EventStatus {
+  Upcoming
+  Live
+  Completed
+  Cancelled
+}
+
+enum RankingType {
+  Official
+  AI
+  PoundForPound
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Fighter {
+  id             String       @id @default(cuid())
+  name           String
+  nickname       String?
+  nationality    String
+  dateOfBirth    DateTime?
+  heightCm       Float?
+  reachCm        Float?
+  stance         Stance?
+  weightClass    WeightClass
+  organization   Organization
+  isChampion     Boolean      @default(false)
+  imageUrl       String?
+  // Embedded record fields (denormalised for fast reads)
+  wins           Int          @default(0)
+  losses         Int          @default(0)
+  draws          Int          @default(0)
+  noContests     Int          @default(0)
+  koWins         Int          @default(0)
+  submissionWins Int          @default(0)
+  decisionWins   Int          @default(0)
+  // Vector embedding for semantic search (1536 dims for text-embedding-3-small)
+  embedding      Unsupported("vector(1536)")?
+
+  fightRecordsAsA FightRecord[] @relation("FighterA")
+  fightRecordsAsB FightRecord[] @relation("FighterB")
+  rankings        Ranking[]
+  wonFights       FightRecord[] @relation("Winner")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organization, weightClass])
+  @@index([name])
+}
+
+model FightRecord {
+  id              String       @id @default(cuid())
+  event           Event        @relation(fields: [eventId], references: [id])
+  eventId         String
+  fighterA        Fighter      @relation("FighterA", fields: [fighterAId], references: [id])
+  fighterAId      String
+  fighterB        Fighter      @relation("FighterB", fields: [fighterBId], references: [id])
+  fighterBId      String
+  winner          Fighter?     @relation("Winner", fields: [winnerId], references: [id])
+  winnerId        String?
+  weightClass     WeightClass
+  scheduledRounds Int          @default(3)
+  result          FightResult?
+  method          FinishMethod?
+  round           Int?
+  timeInRound     String?      // "MM:SS"
+  isMainEvent     Boolean      @default(false)
+  isTitleFight    Boolean      @default(false)
+  order           Int          @default(0) // card position
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([fighterAId])
+  @@index([fighterBId])
+}
+
+model Event {
+  id           String       @id @default(cuid())
+  name         String
+  organization Organization
+  date         DateTime
+  venue        String
+  city         String
+  country      String
+  status       EventStatus  @default(Upcoming)
+  posterUrl    String?
+  fights       FightRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organization, date])
+  @@index([status])
+}
+
+model Ranking {
+  id           String       @id @default(cuid())
+  fighter      Fighter      @relation(fields: [fighterId], references: [id])
+  fighterId    String
+  organization Organization
+  weightClass  WeightClass
+  position     Int
+  type         RankingType  @default(AI)
+  score        Float?
+  reasoning    String?      @db.Text
+  generatedAt  DateTime
+
+  createdAt DateTime @default(now())
+
+  @@unique([fighterId, organization, weightClass, type, generatedAt])
+  @@index([organization, weightClass, type, position])
+}
+
+model User {
+  id                     String         @id @default(cuid())
+  clerkId                String         @unique
+  email                  String         @unique
+  username               String?        @unique
+  avatarUrl              String?
+  favouriteFighters      String[]       @default([])
+  favouriteOrganizations Organization[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clerkId])
+  @@index([email])
+}

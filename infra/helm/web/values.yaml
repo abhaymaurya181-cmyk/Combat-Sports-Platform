@@ -1,0 +1,76 @@
+replicaCount: 2
+
+image:
+  repository: gcr.io/YOUR_PROJECT_ID/combat-sports-web
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: combatsports.io
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: www.combatsports.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: combat-sports-web-tls
+      hosts:
+        - combatsports.io
+        - www.combatsports.io
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+env:
+  NODE_ENV: production
+  NEXT_PUBLIC_APP_URL: "https://combatsports.io"
+  API_GATEWAY_URL: "http://combat-sports-api-gateway:4000"
+  REALTIME_SERVICE_URL: "http://combat-sports-realtime:5000"
+
+envFromSecrets:
+  - name: combat-sports-secrets
+    keys:
+      - CLERK_SECRET_KEY
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+      - DATABASE_URL
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: 3000
+  initialDelaySeconds: 10
+  periodSeconds: 5
